@@ -1,12 +1,12 @@
-# Importing required modules
 from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from kafka_streaming_service import initiate_stream  
-# Configuration for the DAG's start date
+
+
+# Default arguments
 DAG_START_DATE = datetime(2025, 5, 7, 12, 00)
 
-# Default arguments for the DAG
 DAG_DEFAULT_ARGS = {
     'owner': 'airflow',
     'start_date': DAG_START_DATE,
@@ -14,9 +14,9 @@ DAG_DEFAULT_ARGS = {
     'retry_delay': timedelta(seconds=10)
 }
 
-# Creating the DAG with its configuration
+# DAG configuration
 with DAG(
-    'name_stream_dag',  # Renamed for uniqueness
+    dag_id ='name_stream_dag',
     default_args=DAG_DEFAULT_ARGS,
     schedule_interval='0 1 * * *',
     catchup=False,
@@ -24,7 +24,7 @@ with DAG(
     max_active_runs=1
 ) as dag:
     
-    # Defining the data streaming task using PythonOperator
+    # Streaming task using PythonOperator
     kafka_stream_task = PythonOperator(
         task_id='stream_to_kafka_task', 
         python_callable=initiate_stream,

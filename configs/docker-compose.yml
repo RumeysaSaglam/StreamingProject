@@ -22,7 +22,7 @@ services:
       - airflow_db
     environment:
       - LOAD_EX=${LOAD_EX}
-      - EXECUTOR=${EXECU   TOR}
+      - EXECUTOR=${EXECUTOR}
       - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@airflow_db:5432/${POSTGRES_DB}
     logging:
       options:
@@ -32,7 +32,7 @@ services:
       - ./dags:/opt/airflow/dags
       - ./requirements.txt:/opt/airflow/requirements.txt
     ports:
-      - "8080:8080"
+      - "8081:8080"
     healthcheck:
       test: ["CMD-SHELL", "[ -f /usr/local/airflow/airflow-webserver.pid ]"]
       interval: 30s
@@ -115,7 +115,7 @@ services:
   kafka_schema_registry:
     image: confluentinc/cp-schema-registry:latest
     ports:
-      - "8081:8081"
+      - "8082:8081"
     environment:
       - SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS=${SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS}
       - SCHEMA_REGISTRY_HOST_NAME=${SCHEMA_REGISTRY_HOST_NAME}
