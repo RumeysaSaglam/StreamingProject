@@ -115,7 +115,7 @@ services:
   kafka_schema_registry:
     image: confluentinc/cp-schema-registry:latest
     ports:
-      - "8082:8081"
+      - "8082:8082"
     environment:
       - SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS=${SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS}
       - SCHEMA_REGISTRY_HOST_NAME=${SCHEMA_REGISTRY_HOST_NAME}
@@ -129,7 +129,7 @@ services:
     container_name: kafka-ui-1
     image: provectuslabs/kafka-ui:latest
     ports:
-      - 8888:8080
+      - 8888:8888
     depends_on:
       - kafka_broker_1
       - kafka_broker_2
@@ -153,7 +153,7 @@ services:
     image: bitnami/spark:3
     container_name: spark_master
     ports:
-      - 8085:8080
+      - 8085:8085
     environment:
       - SPARK_UI_PORT=${SPARK_UI_PORT}
       - SPARK_MODE=${SPARK_MODE}
