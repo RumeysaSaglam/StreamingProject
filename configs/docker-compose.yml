@@ -16,7 +16,7 @@ services:
   # Apache Airflow Webserver
   airflow_webserver:
     entrypoint: ["/opt/airflow/entrypoint.sh"]
-    image: apache/airflow:latest
+    image: apache/airflow:2.8.1
     restart: always
     depends_on:
       - airflow_db
@@ -60,6 +60,8 @@ services:
     environment:
       - KAFKA_BROKER_ID=1
       - KAFKA_ADVERTISED_LISTENERS=INTERNAL://kafka_broker_1:19092,EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9092,DOCKER://host.docker.internal:29092
+    volumes:
+      - kafka_data_broker_1:/var/lib/kafka/data
 
   kafka_broker_2:
     extends:
@@ -67,6 +69,8 @@ services:
     environment:
       - KAFKA_BROKER_ID=2
       - KAFKA_ADVERTISED_LISTENERS=INTERNAL://kafka_broker_2:19093,EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9093,DOCKER://host.docker.internal:29093
+    volumes:
+      - kafka_data_broker_2:/var/lib/kafka/data
 
   kafka_broker_3:
     extends:
@@ -74,6 +78,8 @@ services:
     environment:
       - KAFKA_BROKER_ID=3
       - KAFKA_ADVERTISED_LISTENERS=INTERNAL://kafka_broker_3:19094,EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9094,DOCKER://host.docker.internal:29094
+    volumes:
+      - kafka_data_broker_3:/var/lib/kafka/data
 
   kafka_base:
     image: confluentinc/cp-kafka:latest
@@ -169,6 +175,9 @@ services:
 
 #volumes for data
 volumes:
+  kafka_data_broker_1:
+  kafka_data_broker_2:
+  kafka_data_broker_3:
   spark_data:
 
 #network for Kafka
