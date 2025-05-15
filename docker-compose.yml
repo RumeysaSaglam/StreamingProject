@@ -23,7 +23,7 @@ services:
     environment:
       - LOAD_EX=${LOAD_EX}
       - EXECUTOR=${EXECUTOR}
-      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@airflow_db:5432/${POSTGRES_DB}
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@airflow_db:5432/${POSTGRES_DB}
     logging:
       options:
         max-size: 10m
@@ -39,6 +39,23 @@ services:
       interval: 30s
       timeout: 30s
       retries: 3
+
+  airflow_scheduler:
+    image: apache/airflow:2.8.1
+    restart: always
+    depends_on:
+      - airflow_db
+    environment:
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@airflow_db:5432/${POSTGRES_DB}
+    command: scheduler
+    volumes:
+      - ./dags:/opt/airflow/dags
+    healthcheck:
+      test: ["CMD-SHELL", "airflow jobs check --job-type SchedulerJob --hostname $(hostname)"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+
 
   # Zookeeper for Kafka
   kafka_zookeeper:
