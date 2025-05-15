@@ -3,7 +3,6 @@ from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from kafka_streaming_service import initiate_stream  
 
-
 # Default arguments
 DAG_START_DATE = datetime(2025, 5, 7, 12, 00)
 
