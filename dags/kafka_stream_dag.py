@@ -1,10 +1,16 @@
 from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
+
+import sys
+import os
+scripts_path = os.path.join(os.path.dirname(__file__), '..', 'scripts')
+sys.path.append(os.path.abspath(scripts_path))
+
 from kafka_streaming_service import initiate_stream  
 
 # Default arguments
-DAG_START_DATE = datetime(2025, 5, 7, 12, 00)
+DAG_START_DATE = datetime(2025, 5, 20, 12, 00)
 
 DAG_DEFAULT_ARGS = {
     'owner': 'airflow',
