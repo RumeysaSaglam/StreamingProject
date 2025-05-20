@@ -5,6 +5,8 @@ set -e
 AIRFLOW_VERSION=$(airflow version | awk -F. '{print $1}')
 echo "Detected Airflow major version: $AIRFLOW_VERSION"
 
+pip install --no-cache-dir -r /opt/airflow/requirements.txt
+
 export PYTHONPATH=$PYTHONPATH:/opt/airflow/scripts
 
 echo "Running airflow db upgrade..."

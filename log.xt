@@ -1,0 +1,428 @@
+name: streamingproject
+services:
+  airflow_db:
+    environment:
+      _AIRFLOW_EMAIL: rumeysa.saglam@oredata.com
+      _AIRFLOW_FIRSTNAME: Rumeysa
+      _AIRFLOW_LASTNAME: Saglam
+      _AIRFLOW_PASSWORD: admin
+      _AIRFLOW_USERNAME: admin
+      CONNECT_BOOTSTRAP_SERVERS: kafka_broker_1:19092
+      CONNECT_CONFIG_STORAGE_TOPIC: _connect-configs
+      CONNECT_GROUP_ID: kafka-connect-group
+      CONNECT_INTERNAL_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_INTERNAL_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      CONNECT_LOG4J_LOGGERS: org.apache.kafka.connect=DEBUG
+      CONNECT_LOG4J_ROOT_LOGLEVEL: INFO
+      CONNECT_OFFSET_STORAGE_TOPIC: _connect-offsets
+      CONNECT_PLUGIN_PATH: /usr/share/java
+      CONNECT_REST_ADVERTISED_HOST_NAME: kafka_connect
+      CONNECT_REST_PORT: "8083"
+      CONNECT_STATUS_STORAGE_TOPIC: _connect-status
+      CONNECT_VALUE_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      DOCKER_HOST_IP: 127.0.0.1
+      DYNAMIC_CONFIG_ENABLED: "true"
+      EXECUTOR: LocalExecutor
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+      KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.auth.SimpleAclAuthorizer
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka_broker_1:19092
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: http://kafka_connect:8083
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: connect
+      KAFKA_CLUSTERS_0_NAME: local-cluster
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://kafka_schema_registry:8081
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,DOCKER:PLAINTEXT
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_LOG4J_LOGGERS: org.apache.kafka.clients.NetworkClient=DEBUG
+      LOAD_EX: "true"
+      POSTGRES_DB: airflow
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka_broker_1:19092
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+      SPARK_MODE: local
+      SPARK_RPC_AUTHENTICATION_ENABLED: "false"
+      SPARK_RPC_ENCRYPTION_ENABLED: "false"
+      SPARK_UI_PORT: "4040"
+      ZOOKEEPER_CLIENT_PORT: "2181"
+      ZOOKEEPER_SERVER_ID: "1"
+    image: postgres:16.0
+    logging:
+      options:
+        max-file: "3"
+        max-size: 10m
+    networks:
+      default: null
+  airflow_scheduler:
+    command:
+      - scheduler
+    depends_on:
+      airflow_db:
+        condition: service_started
+        required: true
+    environment:
+      _AIRFLOW_EMAIL: rumeysa.saglam@oredata.com
+      _AIRFLOW_FIRSTNAME: Rumeysa
+      _AIRFLOW_LASTNAME: Saglam
+      _AIRFLOW_PASSWORD: admin
+      _AIRFLOW_USERNAME: admin
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://:@airflow_db:5432/
+      CONNECT_BOOTSTRAP_SERVERS: kafka_broker_1:19092
+      CONNECT_CONFIG_STORAGE_TOPIC: _connect-configs
+      CONNECT_GROUP_ID: kafka-connect-group
+      CONNECT_INTERNAL_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_INTERNAL_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      CONNECT_LOG4J_LOGGERS: org.apache.kafka.connect=DEBUG
+      CONNECT_LOG4J_ROOT_LOGLEVEL: INFO
+      CONNECT_OFFSET_STORAGE_TOPIC: _connect-offsets
+      CONNECT_PLUGIN_PATH: /usr/share/java
+      CONNECT_REST_ADVERTISED_HOST_NAME: kafka_connect
+      CONNECT_REST_PORT: "8083"
+      CONNECT_STATUS_STORAGE_TOPIC: _connect-status
+      CONNECT_VALUE_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      DOCKER_HOST_IP: 127.0.0.1
+      DYNAMIC_CONFIG_ENABLED: "true"
+      EXECUTOR: LocalExecutor
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+      KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.auth.SimpleAclAuthorizer
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka_broker_1:19092
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: http://kafka_connect:8083
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: connect
+      KAFKA_CLUSTERS_0_NAME: local-cluster
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://kafka_schema_registry:8081
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,DOCKER:PLAINTEXT
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_LOG4J_LOGGERS: org.apache.kafka.clients.NetworkClient=DEBUG
+      LOAD_EX: "true"
+      POSTGRES_DB: airflow
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka_broker_1:19092
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+      SPARK_MODE: local
+      SPARK_RPC_AUTHENTICATION_ENABLED: "false"
+      SPARK_RPC_ENCRYPTION_ENABLED: "false"
+      SPARK_UI_PORT: "4040"
+      ZOOKEEPER_CLIENT_PORT: "2181"
+      ZOOKEEPER_SERVER_ID: "1"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - airflow jobs check --job-type SchedulerJob --hostname $$(hostname)
+      timeout: 30s
+      interval: 30s
+      retries: 3
+    image: apache/airflow:2.8.1
+    networks:
+      default: null
+    restart: always
+    volumes:
+      - type: bind
+        source: /Users/rumeysasaglam/Documents/Projects/kafka_spark/StreamingProject/dags
+        target: /opt/airflow/dags
+        bind:
+          create_host_path: true
+      - type: bind
+        source: /Users/rumeysasaglam/Documents/Projects/kafka_spark/StreamingProject/scripts
+        target: /opt/airflow/scripts
+        bind:
+          create_host_path: true
+  airflow_webserver:
+    depends_on:
+      airflow_db:
+        condition: service_started
+        required: true
+    entrypoint:
+      - /opt/airflow/entrypoint.sh
+    environment:
+      _AIRFLOW_EMAIL: rumeysa.saglam@oredata.com
+      _AIRFLOW_FIRSTNAME: Rumeysa
+      _AIRFLOW_LASTNAME: Saglam
+      _AIRFLOW_PASSWORD: admin
+      _AIRFLOW_USERNAME: admin
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://:@airflow_db:5432/
+      CONNECT_BOOTSTRAP_SERVERS: kafka_broker_1:19092
+      CONNECT_CONFIG_STORAGE_TOPIC: _connect-configs
+      CONNECT_GROUP_ID: kafka-connect-group
+      CONNECT_INTERNAL_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_INTERNAL_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      CONNECT_LOG4J_LOGGERS: org.apache.kafka.connect=DEBUG
+      CONNECT_LOG4J_ROOT_LOGLEVEL: INFO
+      CONNECT_OFFSET_STORAGE_TOPIC: _connect-offsets
+      CONNECT_PLUGIN_PATH: /usr/share/java
+      CONNECT_REST_ADVERTISED_HOST_NAME: kafka_connect
+      CONNECT_REST_PORT: "8083"
+      CONNECT_STATUS_STORAGE_TOPIC: _connect-status
+      CONNECT_VALUE_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      DOCKER_HOST_IP: 127.0.0.1
+      DYNAMIC_CONFIG_ENABLED: "true"
+      EXECUTOR: LocalExecutor
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+      KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.auth.SimpleAclAuthorizer
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka_broker_1:19092
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: http://kafka_connect:8083
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: connect
+      KAFKA_CLUSTERS_0_NAME: local-cluster
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://kafka_schema_registry:8081
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,DOCKER:PLAINTEXT
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_LOG4J_LOGGERS: org.apache.kafka.clients.NetworkClient=DEBUG
+      LOAD_EX: "true"
+      POSTGRES_DB: airflow
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka_broker_1:19092
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+      SPARK_MODE: local
+      SPARK_RPC_AUTHENTICATION_ENABLED: "false"
+      SPARK_RPC_ENCRYPTION_ENABLED: "false"
+      SPARK_UI_PORT: "4040"
+      ZOOKEEPER_CLIENT_PORT: "2181"
+      ZOOKEEPER_SERVER_ID: "1"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - '[ -f /opt/airflow/airflow-webserver.pid ]'
+      timeout: 30s
+      interval: 30s
+      retries: 3
+    image: apache/airflow:2.8.1
+    logging:
+      options:
+        max-file: "3"
+        max-size: 10m
+    networks:
+      default: null
+    ports:
+      - mode: ingress
+        target: 8080
+        published: "8080"
+        protocol: tcp
+    restart: always
+    volumes:
+      - type: bind
+        source: /Users/rumeysasaglam/Documents/Projects/kafka_spark/StreamingProject/dags
+        target: /opt/airflow/dags
+        bind:
+          create_host_path: true
+      - type: bind
+        source: /Users/rumeysasaglam/Documents/Projects/kafka_spark/StreamingProject/scripts
+        target: /opt/airflow/scripts
+        bind:
+          create_host_path: true
+      - type: bind
+        source: /Users/rumeysasaglam/Documents/Projects/kafka_spark/StreamingProject/entrypoint.sh
+        target: /opt/airflow/entrypoint.sh
+        bind:
+          create_host_path: true
+      - type: bind
+        source: /Users/rumeysasaglam/Documents/Projects/kafka_spark/StreamingProject/requirements.txt
+        target: /opt/airflow/requirements.txt
+        bind:
+          create_host_path: true
+  kafka_base:
+    environment:
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+      KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.auth.SimpleAclAuthorizer
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,DOCKER:PLAINTEXT
+      KAFKA_LOG4J_LOGGERS: org.apache.kafka.clients.NetworkClient=DEBUG
+      KAFKA_ZOOKEEPER_CONNECT: kafka_zookeeper:2181
+    image: confluentinc/cp-kafka:latest
+    networks:
+      default: null
+      kafka_network: null
+  kafka_broker_1:
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka_broker_1:19092,EXTERNAL://127.0.0.1:9092,DOCKER://host.docker.internal:29092
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+      KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.auth.SimpleAclAuthorizer
+      KAFKA_BROKER_ID: "1"
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,DOCKER:PLAINTEXT
+      KAFKA_LOG4J_LOGGERS: org.apache.kafka.clients.NetworkClient=DEBUG
+      KAFKA_ZOOKEEPER_CONNECT: kafka_zookeeper:2181
+    image: confluentinc/cp-kafka:latest
+    networks:
+      default: null
+      kafka_network: null
+    volumes:
+      - type: volume
+        source: kafka_data_broker_1
+        target: /var/lib/kafka/data
+        volume: {}
+  kafka_broker_2:
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka_broker_2:19093,EXTERNAL://127.0.0.1:9093,DOCKER://host.docker.internal:29093
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+      KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.auth.SimpleAclAuthorizer
+      KAFKA_BROKER_ID: "2"
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,DOCKER:PLAINTEXT
+      KAFKA_LOG4J_LOGGERS: org.apache.kafka.clients.NetworkClient=DEBUG
+      KAFKA_ZOOKEEPER_CONNECT: kafka_zookeeper:2181
+    image: confluentinc/cp-kafka:latest
+    networks:
+      default: null
+      kafka_network: null
+    volumes:
+      - type: volume
+        source: kafka_data_broker_2
+        target: /var/lib/kafka/data
+        volume: {}
+  kafka_broker_3:
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka_broker_3:19094,EXTERNAL://127.0.0.1:9094,DOCKER://host.docker.internal:29094
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+      KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.auth.SimpleAclAuthorizer
+      KAFKA_BROKER_ID: "3"
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,DOCKER:PLAINTEXT
+      KAFKA_LOG4J_LOGGERS: org.apache.kafka.clients.NetworkClient=DEBUG
+      KAFKA_ZOOKEEPER_CONNECT: kafka_zookeeper:2181
+    image: confluentinc/cp-kafka:latest
+    networks:
+      default: null
+      kafka_network: null
+    volumes:
+      - type: volume
+        source: kafka_data_broker_3
+        target: /var/lib/kafka/data
+        volume: {}
+  kafka_connect:
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: kafka_broker_1:19092
+      CONNECT_CONFIG_STORAGE_TOPIC: _connect-configs
+      CONNECT_GROUP_ID: kafka-connect-group
+      CONNECT_INTERNAL_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_INTERNAL_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      CONNECT_LOG4J_LOGGERS: org.apache.kafka.connect=DEBUG
+      CONNECT_LOG4J_ROOT_LOGLEVEL: INFO
+      CONNECT_OFFSET_STORAGE_TOPIC: _connect-offsets
+      CONNECT_PLUGIN_PATH: /usr/share/java
+      CONNECT_REST_ADVERTISED_HOST_NAME: kafka_connect
+      CONNECT_REST_PORT: "8083"
+      CONNECT_STATUS_STORAGE_TOPIC: _connect-status
+      CONNECT_VALUE_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+    image: confluentinc/cp-kafka-connect:latest
+    networks:
+      default: null
+      kafka_network: null
+    ports:
+      - mode: ingress
+        target: 8083
+        published: "8083"
+        protocol: tcp
+  kafka_schema_registry:
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka_broker_1:19092
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+    image: confluentinc/cp-schema-registry:latest
+    networks:
+      default: null
+      kafka_network: null
+    ports:
+      - mode: ingress
+        target: 8081
+        published: "8081"
+        protocol: tcp
+  kafka_ui:
+    container_name: kafka-ui-1
+    depends_on:
+      kafka_broker_1:
+        condition: service_started
+        required: true
+      kafka_broker_2:
+        condition: service_started
+        required: true
+      kafka_broker_3:
+        condition: service_started
+        required: true
+      kafka_connect:
+        condition: service_started
+        required: true
+      kafka_schema_registry:
+        condition: service_started
+        required: true
+    environment:
+      DYNAMIC_CONFIG_ENABLED: "true"
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka_broker_1:19092
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: http://kafka_connect:8083
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: connect
+      KAFKA_CLUSTERS_0_NAME: local-cluster
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://kafka_schema_registry:8081
+    image: provectuslabs/kafka-ui:latest
+    networks:
+      default: null
+      kafka_network: null
+    ports:
+      - mode: ingress
+        target: 8080
+        published: "8888"
+        protocol: tcp
+  kafka_zookeeper:
+    environment:
+      ZOOKEEPER_CLIENT_PORT: "2181"
+      ZOOKEEPER_SERVER_ID: "1"
+      ZOOKEEPER_SERVERS: kafka_zookeeper:2888:3888
+    image: confluentinc/cp-zookeeper:latest
+    networks:
+      default: null
+      kafka_network: null
+    ports:
+      - mode: ingress
+        target: 2181
+        published: "2181"
+        protocol: tcp
+  spark_master:
+    container_name: spark_master
+    environment:
+      SPARK_MODE: local
+      SPARK_RPC_AUTHENTICATION_ENABLED: "false"
+      SPARK_RPC_ENCRYPTION_ENABLED: "false"
+      SPARK_UI_PORT: "4040"
+    image: bitnami/spark:3
+    networks:
+      default: null
+      kafka_network: null
+    ports:
+      - mode: ingress
+        target: 8080
+        published: "8085"
+        protocol: tcp
+    volumes:
+      - type: bind
+        source: /Users/rumeysasaglam/Documents/Projects/kafka_spark/StreamingProject
+        target: /home
+        bind:
+          create_host_path: true
+      - type: volume
+        source: spark_data
+        target: /opt/bitnami/spark/data
+        volume: {}
+networks:
+  default:
+    name: docker_streaming
+    external: true
+  kafka_network:
+    name: streamingproject_kafka_network
+    driver: bridge
+volumes:
+  kafka_data_broker_1:
+    name: streamingproject_kafka_data_broker_1
+  kafka_data_broker_2:
+    name: streamingproject_kafka_data_broker_2
+  kafka_data_broker_3:
+    name: streamingproject_kafka_data_broker_3
+  spark_data:
+    name: streamingproject_spark_data
