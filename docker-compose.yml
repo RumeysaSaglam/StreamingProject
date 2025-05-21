@@ -16,8 +16,11 @@ services:
     
   # Apache Airflow Webserver
   airflow_webserver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: custom-airflow:2.8.1
     entrypoint: ["/opt/airflow/entrypoint.sh"]
-    image: apache/airflow:2.8.1
     restart: on-failure
     command: airflow webserver
     depends_on:
@@ -46,7 +49,10 @@ services:
       retries: 3
 
   airflow_scheduler:
-    image: apache/airflow:2.8.1
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: custom-airflow:2.8.1
     restart: always
     depends_on:
       - airflow_db
