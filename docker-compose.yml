@@ -138,7 +138,7 @@ services:
 
   # Kafka Connect
   kafka_connect:
-    image: confluentinc/cp-kafka-connect:latest
+    image: confluentinc/cp-kafka-connect:7.6.1
     ports:
       - "8083:8083"
     depends_on:
@@ -160,6 +160,10 @@ services:
       - CONNECT_LOG4J_ROOT_LOGLEVEL=${CONNECT_LOG4J_ROOT_LOGLEVEL}
       - CONNECT_LOG4J_LOGGERS=${CONNECT_LOG4J_LOGGERS}
       - CONNECT_PLUGIN_PATH=${CONNECT_PLUGIN_PATH}
+      - CONNECT_REST_ADVERTISED_LISTENER=${CONNECT_REST_ADVERTISED_LISTENER}
+      - CONNECT_SCHEMA_REGISTRY_URL=${CONNECT_SCHEMA_REGISTRY_URL}
+    volumes:
+      - ./connect-plugins:/usr/share/java
     networks:
       - kafka_network
 
