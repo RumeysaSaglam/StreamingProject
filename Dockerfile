@@ -14,5 +14,5 @@ USER airflow
 COPY requirements.txt /requirements.txt
 RUN pip install --no-cache-dir -r /requirements.txt
 
-# (Opsiyonel ama tavsiye edilen) PYTHONPATH tanımla
+ENV PYTHONPATH=/Users/rumeysasaglam/Projects
 ENV PYTHONPATH="${PYTHONPATH}:/opt/airflow/scripts"

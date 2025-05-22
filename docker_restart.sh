@@ -15,6 +15,9 @@ echo "Removing Kafka volumes..."
 
 docker volume rm streamingproject_kafka_data_broker_1 streamingproject_kafka_data_broker_2
 
+echo "Building Dockerfile..."
+docker compose build
+
 # Yeniden başlat
 echo "Starting containers..."
 docker compose up -d
