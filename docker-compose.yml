@@ -14,12 +14,12 @@ services:
         max-size: 10m
         max-file: "3"
     networks:
-      - kafka_network  # Kafka network'e eklendi
-    
+      - kafka_network
+
   # Apache Airflow Webserver
   airflow_webserver:
     build:
-      context: .
+      context: ./  #airflow_df
       dockerfile: Dockerfile
     image: custom-airflow:2.8.1
     entrypoint: ["/opt/airflow/entrypoint.sh"]
@@ -51,7 +51,7 @@ services:
       timeout: 30s
       retries: 3
     networks:
-      - kafka_network  # Kafka network'e eklendi
+      - kafka_network
 
   airflow_scheduler:
     build:
@@ -76,11 +76,11 @@ services:
       timeout: 30s
       retries: 3
     networks:
-      - kafka_network  # Kafka network'e eklendi
+      - kafka_network
 
   # Zookeeper for Kafka
   kafka_zookeeper:
-    image: confluentinc/cp-zookeeper:7.9.1
+    image: confluentinc/cp-zookeeper:7.4.0
     ports:
       - "2181:2181"
     environment:
@@ -95,13 +95,14 @@ services:
     networks:
       - kafka_network
 
-  # Kafka Broker Instances
-  kafka_broker_1:
-    image: confluentinc/cp-kafka:7.9.1
+  # Kafka Broker - TEK BROKER
+  kafka_broker:
+    image: confluentinc/cp-kafka:7.4.0
     ports:
       - 9092:9092
+      - 19092:19092
       - 29092:29092
-    hostname: kafka_broker_1
+    hostname: kafka_broker
     depends_on:
       kafka_zookeeper:
         condition: service_healthy
@@ -114,49 +115,16 @@ services:
       KAFKA_LOG_DIRS: ${KAFKA_LOG_DIRS}
       KAFKA_ZOOKEEPER_CONNECT: ${KAFKA_ZOOKEEPER_CONNECT}
       KAFKA_LISTENERS: INTERNAL://0.0.0.0:19092,EXTERNAL://0.0.0.0:9092,DOCKER://0.0.0.0:29092
-      KAFKA_ADVERTISED_LISTENERS: ${KAFKA_BROKER_1_ADVERTISED_LISTENERS}
+      KAFKA_ADVERTISED_LISTENERS: ${KAFKA_BROKER_ADVERTISED_LISTENERS}
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
     volumes:
-      - kafka_data_broker_1:/var/lib/kafka/data
+      - kafka_data_broker:/var/lib/kafka/data
     healthcheck:
       test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:19092"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 15s
-    networks:
-      - kafka_network
-
-  kafka_broker_2:
-    image: confluentinc/cp-kafka:7.9.1
-    ports:
-      - 9093:9093
-      - 29093:29093
-    hostname: kafka_broker_2
-    depends_on:
-      kafka_zookeeper:
-        condition: service_healthy
-    environment:
-      KAFKA_BROKER_ID: 2
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: ${KAFKA_LISTENER_SECURITY_PROTOCOL_MAP}
-      KAFKA_INTER_BROKER_LISTENER_NAME: ${KAFKA_INTER_BROKER_LISTENER_NAME}
-      KAFKA_LOG4J_LOGGERS: ${KAFKA_LOG4J_LOGGERS}
-      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: ${KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND}
-      KAFKA_LOG_DIRS: ${KAFKA_LOG_DIRS}
-      KAFKA_ZOOKEEPER_CONNECT: ${KAFKA_ZOOKEEPER_CONNECT}
-      KAFKA_LISTENERS: INTERNAL://0.0.0.0:19093,EXTERNAL://0.0.0.0:9093,DOCKER://0.0.0.0:29093
-      KAFKA_ADVERTISED_LISTENERS: ${KAFKA_BROKER_2_ADVERTISED_LISTENERS}
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-    volumes:
-      - kafka_data_broker_2:/var/lib/kafka/data
-    healthcheck:
-      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:19093"]
-      interval: 10s
-      timeout: 5s
+      interval: 20s
+      timeout: 10s
       retries: 5
       start_period: 15s
     networks:
@@ -164,12 +132,9 @@ services:
 
   # Kafka Schema Registry
   kafka_schema_registry:
-    image: confluentinc/cp-schema-registry:7.9.1
+    image: confluentinc/cp-schema-registry:7.4.0
     depends_on:
-      kafka_broker_1:
-        condition: service_healthy
-      kafka_broker_2:
-        condition: service_healthy
+      - kafka_broker
     ports:
       - "8081:8081"
     environment:
@@ -189,13 +154,15 @@ services:
 
   # Kafka Connect
   kafka_connect:
-    image: confluentinc/cp-kafka-connect:7.8.0
+    # build:
+    #   context: ./kafka_connect_df
+    #   dockerfile: Dockerfile
+    # image: custom-kafka-connect:7.4.0
+    image: debezium/connect:2.4
     ports:
       - "8083:8083"
     depends_on:
-      kafka_broker_1:
-        condition: service_healthy
-      kafka_broker_2:
+      kafka_broker:
         condition: service_healthy
       kafka_schema_registry:
         condition: service_healthy
@@ -219,14 +186,9 @@ services:
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_CUB_KAFKA_TIMEOUT: 0
     volumes:
-      - ./connect-plugins:/usr/share/java
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8083/connectors"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 40s
+      - ./connect-plugins:/usr/share/java    
     networks:
       - kafka_network
 
@@ -238,14 +200,12 @@ services:
     ports:
       - 8888:8080
     depends_on:
-      kafka_broker_1:
-        condition: service_healthy
-      kafka_broker_2:
+      kafka_broker:
         condition: service_healthy
       kafka_schema_registry:
         condition: service_healthy
-      kafka_connect:
-        condition: service_healthy
+      # kafka_connect:
+      #   condition: service_healthy
     environment:
       KAFKA_CLUSTERS_0_NAME: ${KAFKA_CLUSTERS_0_NAME}
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: ${KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS}
@@ -261,11 +221,9 @@ services:
     image: bitnami/spark:3
     container_name: spark_master
     ports:
-      - 8085:8080
+      - 8086:8080
     depends_on:
-      kafka_broker_1:
-        condition: service_healthy
-      kafka_broker_2:
+      kafka_broker:
         condition: service_healthy
       kafka_schema_registry:
         condition: service_healthy
@@ -282,13 +240,10 @@ services:
     networks:
       - kafka_network
 
-#volumes for data
 volumes:
-  kafka_data_broker_1:
-  kafka_data_broker_2:
+  kafka_data_broker:
   spark_data:
 
-#network for Kafka
 networks:
   kafka_network:
     name: kafka_network

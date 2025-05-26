@@ -13,7 +13,7 @@ echo "Removing Kafka volumes..."
 #Kafkaya ait volume'leri sil
 #docker volume ls -q | grep kafka | xargs docker volume rm
 
-docker volume rm streamingproject_kafka_data_broker_1 streamingproject_kafka_data_broker_2
+docker volume rm streamingproject_kafka_data_broker streamingproject_spark_data
 
 echo "Building Dockerfile..."
 docker compose build
