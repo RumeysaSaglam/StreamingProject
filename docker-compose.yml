@@ -15,11 +15,12 @@ services:
         max-file: "3"
     networks:
       - kafka_network
+      
 
   # Apache Airflow Webserver
   airflow_webserver:
     build:
-      context: ./  #airflow_df
+      context: ./
       dockerfile: Dockerfile
     image: custom-airflow:2.8.1
     entrypoint: ["/opt/airflow/entrypoint.sh"]
@@ -34,6 +35,9 @@ services:
       - LOAD_EX=${LOAD_EX}
       - EXECUTOR=${EXECUTOR}
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@airflow_db:5432/${POSTGRES_DB}
+      - AIRFLOW__WEBSERVER__SECRET_KEY=_AIRFLOW_SECRET_KEY
+    dns:
+      - 8.8.8.8
     logging:
       options:
         max-size: 10m
@@ -52,6 +56,7 @@ services:
       retries: 3
     networks:
       - kafka_network
+      
 
   airflow_scheduler:
     build:
@@ -66,6 +71,7 @@ services:
       - .env
     environment:
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@airflow_db:5432/${POSTGRES_DB}
+      - AIRFLOW__WEBSERVER__SECRET_KEY=_AIRFLOW_SECRET_KEY
     command: scheduler
     volumes:
       - ./dags:/opt/airflow/dags
@@ -77,6 +83,7 @@ services:
       retries: 3
     networks:
       - kafka_network
+      
 
   # Zookeeper for Kafka
   kafka_zookeeper:
@@ -95,7 +102,7 @@ services:
     networks:
       - kafka_network
 
-  # Kafka Broker - TEK BROKER
+  # Kafka Broker
   kafka_broker:
     image: confluentinc/cp-kafka:7.4.0
     ports:
@@ -137,7 +144,7 @@ services:
     depends_on:
       - kafka_broker
     ports:
-      - "8081:8081"
+      - "8082:8081"
     environment:
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: ${SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS}
       SCHEMA_REGISTRY_HOST_NAME: ${SCHEMA_REGISTRY_HOST_NAME}
@@ -155,10 +162,6 @@ services:
 
   # Kafka Connect
   kafka_connect:
-    # build:
-    #   context: ./kafka_connect_df
-    #   dockerfile: Dockerfile
-    # image: custom-kafka-connect:7.4.0
     image: debezium/connect:2.4
     ports:
       - "8083:8083"
@@ -168,26 +171,26 @@ services:
       kafka_schema_registry:
         condition: service_healthy
     environment:
-      CONNECT_BOOTSTRAP_SERVERS: ${CONNECT_BOOTSTRAP_SERVERS}
-      CONNECT_REST_PORT: ${CONNECT_REST_PORT}
-      CONNECT_GROUP_ID: ${CONNECT_GROUP_ID}
-      CONNECT_CONFIG_STORAGE_TOPIC: ${CONNECT_CONFIG_STORAGE_TOPIC}
-      CONNECT_OFFSET_STORAGE_TOPIC: ${CONNECT_OFFSET_STORAGE_TOPIC}
-      CONNECT_STATUS_STORAGE_TOPIC: ${CONNECT_STATUS_STORAGE_TOPIC}
-      CONNECT_KEY_CONVERTER: ${CONNECT_KEY_CONVERTER}
-      CONNECT_VALUE_CONVERTER: ${CONNECT_VALUE_CONVERTER}
-      CONNECT_INTERNAL_KEY_CONVERTER: ${CONNECT_INTERNAL_KEY_CONVERTER}
-      CONNECT_INTERNAL_VALUE_CONVERTER: ${CONNECT_INTERNAL_VALUE_CONVERTER}
-      CONNECT_REST_ADVERTISED_HOST_NAME: ${CONNECT_REST_ADVERTISED_HOST_NAME}
-      CONNECT_LOG4J_ROOT_LOGLEVEL: ${CONNECT_LOG4J_ROOT_LOGLEVEL}
-      CONNECT_LOG4J_LOGGERS: ${CONNECT_LOG4J_LOGGERS}
-      CONNECT_PLUGIN_PATH: ${CONNECT_PLUGIN_PATH}
-      CONNECT_REST_ADVERTISED_LISTENER: ${CONNECT_REST_ADVERTISED_LISTENER}
-      CONNECT_SCHEMA_REGISTRY_URL: ${CONNECT_SCHEMA_REGISTRY_URL}
-      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
-      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
-      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
-      CONNECT_CUB_KAFKA_TIMEOUT: 0
+      BOOTSTRAP_SERVERS: ${CONNECT_BOOTSTRAP_SERVERS}
+      REST_PORT: ${CONNECT_REST_PORT}
+      GROUP_ID: ${CONNECT_GROUP_ID}
+      CONFIG_STORAGE_TOPIC: _connect-configs
+      OFFSET_STORAGE_TOPIC: _connect-offsets
+      STATUS_STORAGE_TOPIC: _connect-status
+      KEY_CONVERTER: ${CONNECT_KEY_CONVERTER}
+      VALUE_CONVERTER: ${CONNECT_VALUE_CONVERTER}
+      INTERNAL_KEY_CONVERTER: ${CONNECT_INTERNAL_KEY_CONVERTER}
+      INTERNAL_VALUE_CONVERTER: ${CONNECT_INTERNAL_VALUE_CONVERTER}
+      REST_ADVERTISED_HOST_NAME: ${CONNECT_REST_ADVERTISED_HOST_NAME}
+      LOG4J_ROOT_LOGLEVEL: ${CONNECT_LOG4J_ROOT_LOGLEVEL}
+      LOG4J_LOGGERS: ${CONNECT_LOG4J_LOGGERS}
+      PLUGIN_PATH: ${CONNECT_PLUGIN_PATH}
+      REST_ADVERTISED_LISTENER: ${CONNECT_REST_ADVERTISED_LISTENER}
+      SCHEMA_REGISTRY_URL: ${CONNECT_SCHEMA_REGISTRY_URL}
+      CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      STATUS_STORAGE_REPLICATION_FACTOR: 1
+      CUB_KAFKA_TIMEOUT: 0
     volumes:
       - ./connect-plugins:/usr/share/java
     networks:
@@ -205,8 +208,6 @@ services:
         condition: service_healthy
       kafka_schema_registry:
         condition: service_healthy
-      # kafka_connect:
-      #   condition: service_healthy
     environment:
       KAFKA_CLUSTERS_0_NAME: ${KAFKA_CLUSTERS_0_NAME}
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: ${KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS}
@@ -221,26 +222,131 @@ services:
   spark_master:
     image: bitnami/spark:3
     container_name: spark_master
+    hostname: spark_master
     ports:
-      - 8086:8080
+      - "8086:8080"  # Master Web UI
+      - "7077:7077"  # Master Port
     depends_on:
       kafka_broker:
         condition: service_healthy
       kafka_schema_registry:
         condition: service_healthy
-      kafka_connect:
-        condition: service_healthy
     environment:
-      SPARK_UI_PORT: ${SPARK_UI_PORT}
-      SPARK_MODE: ${SPARK_MODE}
-      SPARK_RPC_AUTHENTICATION_ENABLED: ${SPARK_RPC_AUTHENTICATION_ENABLED}
-      SPARK_RPC_ENCRYPTION_ENABLED: ${SPARK_RPC_ENCRYPTION_ENABLED}
+      - SPARK_MODE=master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no  
+      - SPARK_SSL_ENABLED=no
+      - SPARK_MASTER_HOST=spark_master
+      - SPARK_MASTER_PORT_NUMBER=7077
+      - SPARK_MASTER_WEBUI_PORT=8086
     volumes:
       - ./:/home
       - spark_data:/opt/bitnami/spark/data
     networks:
       - kafka_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
+  spark_worker:
+    image: bitnami/spark:3
+    container_name: spark_worker
+    hostname: spark_worker
+    depends_on:
+      spark_master:
+        condition: service_healthy
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark_master:7077
+      - SPARK_WORKER_MEMORY=1g
+      - SPARK_WORKER_CORES=1
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - SPARK_WORKER_PORT=8081
+      - SPARK_WORKER_WEBUI_PORT=8081
+    volumes:
+      - spark_data:/opt/bitnami/spark/data
+    networks:
+      - kafka_network
+    ports:
+      - "8081:8081"  # Worker Web UI
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
+    restart: unless-stopped
+
+  spark_submitter:
+    image: bitnami/spark:3
+    container_name: spark_submitter
+    depends_on:
+      spark_worker:
+        condition: service_healthy
+      spark_master:
+        condition: service_healthy
+    user: "0:0"
+    environment:
+      - USER=root
+      - SPARK_USER=root
+      - HADOOP_USER_NAME=root
+      - HOME=/root
+      - HADOOP_CONF_DIR=/opt/bitnami/spark/conf
+      - JAVA_HOME=/opt/bitnami/java
+      - SPARK_MASTER_URL=spark://spark_master:7077
+    volumes:
+      - ./scripts:/scripts
+      - ./jars:/opt/bitnami/spark/jars/custom
+      - spark_data:/opt/bitnami/spark/data
+    networks:
+      - kafka_network
+    restart: on-failure
+    command: >
+      bash -c "
+      echo 'Checking Spark Master availability...' &&
+      until curl -s http://spark_master:8080 > /dev/null; do
+        echo 'Waiting for Spark Master Web UI...'
+        sleep 5
+      done &&
+      echo 'Checking Spark Worker availability...' &&
+      until curl -s http://spark_worker:8081 > /dev/null; do
+        echo 'Waiting for Spark Worker Web UI...'
+        sleep 5
+      done &&
+      echo 'Both Master and Worker are ready!' &&
+      echo 'Waiting for worker registration...' &&
+      sleep 30 &&
+      echo 'Starting Spark application...' &&
+      spark-submit \\
+      --master spark://spark_master:7077 \\
+      --deploy-mode client \\
+      --executor-memory 1g \\
+      --driver-memory 1g \\
+      --total-executor-cores 1 \\
+      --conf spark.jars.ivy=/tmp/.ivy2 \\
+      --conf spark.hadoop.hadoop.security.authentication=simple \\
+      --conf spark.hadoop.hadoop.security.authorization=false \\
+      --conf spark.sql.warehouse.dir=/tmp/spark-warehouse \\
+      --conf spark.hadoop.fs.defaultFS=file:/// \\
+      --conf spark.serializer=org.apache.spark.serializer.KryoSerializer \\
+      --conf spark.sql.adaptive.enabled=true \\
+      --conf spark.sql.adaptive.coalescePartitions.enabled=true \\
+      --conf spark.driver.host=spark_submitter \\
+      --conf spark.driver.bindAddress=0.0.0.0 \\
+      --conf spark.executor.extraJavaOptions='-Djava.net.preferIPv4Stack=true' \\
+      --conf spark.driver.extraJavaOptions='-Djava.net.preferIPv4Stack=true' \\
+      --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.4.0,org.postgresql:postgresql:42.7.4 \\
+      --jars /opt/bitnami/spark/jars/custom/postgresql-42.7.4.jar \\
+      /scripts/spark_processing.py
+      "
+        
 volumes:
   kafka_data_broker:
   spark_data:

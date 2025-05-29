@@ -25,3 +25,10 @@ airflow users create \
 
 echo "Starting Airflow webserver..."
 exec airflow webserver
+
+echo "connections add spark"
+
+airflow connections add 'spark_default' \
+    --conn-type 'spark' \
+    --conn-host 'spark-master' \
+    --conn-port '7077'

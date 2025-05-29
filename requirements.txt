@@ -2,3 +2,5 @@ confluent-kafka
 requests
 json5
 pyspark
+kafka-python
+apache-airflow-providers-apache-spark

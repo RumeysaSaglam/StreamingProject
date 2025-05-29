@@ -8,12 +8,12 @@ docker compose down
 echo "Removing Kafka volumes..."
 
 #Tüm volume'leri sil
-#docker volume rm $(docker volume ls -q)
+docker volume rm $(docker volume ls -q)
 
 #Kafkaya ait volume'leri sil
 #docker volume ls -q | grep kafka | xargs docker volume rm
 
-docker volume rm streamingproject_kafka_data_broker streamingproject_spark_data
+#docker volume rm streamingproject_kafka_data_broker streamingproject_spark_data
 
 echo "Building Dockerfile..."
 docker compose build
