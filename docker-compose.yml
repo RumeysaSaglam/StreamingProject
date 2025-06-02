@@ -20,7 +20,7 @@ services:
   # Apache Airflow Webserver
   airflow_webserver:
     build:
-      context: ./
+      context: ./dockerfile-airflow
       dockerfile: Dockerfile
     image: custom-airflow:2.8.1
     entrypoint: ["/opt/airflow/entrypoint.sh"]
@@ -46,7 +46,7 @@ services:
       - ./dags:/opt/airflow/dags
       - ./scripts:/opt/airflow/scripts
       - ./entrypoint.sh:/opt/airflow/entrypoint.sh
-      - ./requirements.txt:/opt/airflow/requirements.txt
+      - ./dockerfile-airflow/requirements.txt:/opt/airflow/requirements.txt
     ports:
       - 8080:8080
     healthcheck:
@@ -60,7 +60,7 @@ services:
 
   airflow_scheduler:
     build:
-      context: .
+      context: ./dockerfile-airflow
       dockerfile: Dockerfile
     image: custom-airflow:2.8.1
     restart: always
@@ -106,7 +106,7 @@ services:
   kafka_broker:
     image: confluentinc/cp-kafka:7.4.0
     ports:
-      - 9092:9092
+      - 9192:9092
       - 19092:19092
       - 29092:29092
     hostname: kafka_broker
@@ -121,7 +121,7 @@ services:
       KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: ${KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND}
       KAFKA_LOG_DIRS: ${KAFKA_LOG_DIRS}
       KAFKA_ZOOKEEPER_CONNECT: ${KAFKA_ZOOKEEPER_CONNECT}
-      KAFKA_LISTENERS: INTERNAL://0.0.0.0:19092,EXTERNAL://0.0.0.0:9092,DOCKER://0.0.0.0:29092
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:19092,EXTERNAL://0.0.0.0:9192,DOCKER://0.0.0.0:29092
       KAFKA_ADVERTISED_LISTENERS: ${KAFKA_BROKER_ADVERTISED_LISTENERS}
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
@@ -278,10 +278,10 @@ services:
       - "8081:8081"  # Worker Web UI
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8081"]
-      interval: 30s
-      timeout: 10s
+      interval: 60s
+      timeout: 30s
       retries: 3
-      start_period: 45s
+      start_period: 90s
     restart: unless-stopped
 
   spark_submitter:
