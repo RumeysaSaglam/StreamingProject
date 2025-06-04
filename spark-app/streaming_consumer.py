@@ -89,14 +89,14 @@ def parse_user_data(df):
     
     # Flattened DataFrame oluştur
     flattened_df = user_df.select(
-        concat(substring("user.login.uuid", 1, 4), lit("****-****")).alias("uuid") #col("user.login.uuid").alias("uuid"),
+        concat(substring(col("user.login.uuid"), 1, 4), lit("****-****")).alias("uuid"), #col("user.login.uuid").alias("uuid"),
         col("user.gender").alias("gender"),
         col("user.name.title").alias("title"),
         col("user.name.first").alias("first_name"),
         col("user.name.last").alias("last_name"),
         col("user.email").alias("email"),
-        expr("concat('***-***-', substring(user.phone, -4))").alias("phone"),  #col("user.phone").alias("phone"),
-        expr("concat('***-***-', substring(user.cell, -4))").alias("cell"),  #col("user.cell").alias("cell"),
+        expr("concat('***-***-', substring(user.phone, length(user.phone)-3, 4))").alias("phone"),  #col("user.phone").alias("phone"),
+        expr("concat('***-***-', substring(user.cell, length(user.cell)-3, 4))").alias("cell"), #col("user.cell").alias("cell"),
         to_date(col("user.dob.date")).alias("date_of_birth"),
         col("user.dob.age").alias("age"),
         col("user.nat").alias("nationality"),
