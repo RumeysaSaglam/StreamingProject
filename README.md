@@ -1,4 +1,4 @@
-# StreamingProject# Stream Pipeline - Docker + PySpark + Kafka + PostgreSQL
+# Stream Pipeline - Docker + PySpark + Kafka + PostgreSQL
 
 Bu proje, randomuser.me API'sinden kullanıcı verilerini alıp, Kafka üzerinden stream ederek PostgreSQL'e yazan bir pipeline'dır.
 
@@ -21,7 +21,7 @@ RandomUser API → Kafka Producer → Kafka → Spark Streaming → PostgreSQL
 │   └── producer.py           # Kafka producer scripti
 ├── spark-app/
 │   └── streaming_consumer.py  # PySpark streaming uygulaması
-└── jars/                     # JDBC driver'lar (otomatik indirilir)
+└── jars/                     # JDBC driver'lar
 ```
 
 

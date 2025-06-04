@@ -40,7 +40,7 @@ def main():
                 result = future.get(timeout=10)
                 logger.info(f"Veri gönderildi: {result}")
             
-            time.sleep(5)  # 5 saniye bekle
+            time.sleep(5)
             
         except KeyboardInterrupt:
             logger.info("Producer durduruluyor...")
