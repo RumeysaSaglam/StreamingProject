@@ -2,13 +2,13 @@
 
 Bu proje, randomuser.me API'sinden kullanıcı verilerini alıp, Kafka üzerinden stream ederek PostgreSQL'e yazan bir pipeline'dır.
 
-## 🏗️ Mimari
+## Mimari
 
 ```
 RandomUser API → Kafka Producer → Kafka → Spark Streaming → PostgreSQL
 ```
 
-## 📁 Proje Yapısı
+## Proje Yapısı
 
 ```
 .
@@ -48,7 +48,7 @@ docker exec spark-master spark-submit \
   /app/streaming_consumer.py
 ```
 
-## 🔍 Monitoring & Kontrol
+## Monitoring & Kontrol
 
 ### Spark UI
 ```
@@ -76,14 +76,14 @@ docker logs -f spark-master
 ```
 
 
-## 📊 Veri Akışı
+## Veri Akışı
 
 1. **Producer**: Her 5 saniyede bir randomuser.me API'sinden veri çeker
 2. **Kafka**: Veriyi `user-data` topic'inde saklar
 3. **Spark Streaming**: Kafka'dan veriyi okur, parse eder ve PostgreSQL'e yazar
 4. **PostgreSQL**: Tüm kullanıcı verilerini `users` tablosunda saklar
 
-## 🗃️ PostgreSQL Tablo Yapısı
+## PostgreSQL Tablo Yapısı
 
 `users` tablosu şu alanları içerir:
 - Kişisel bilgiler (ad, soyad, cinsiyet, yaş)
@@ -92,7 +92,7 @@ docker logs -f spark-master
 - Login bilgileri (kullanıcı adı, hash'ler)
 - Profil fotoğrafları
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Pipeline Çalışmıyor ise
 
@@ -112,7 +112,7 @@ docker exec -it pgdb psql -U postgres -d postgres -c "\dt"
 ```
 
 
-## 🛑 Pipeline'ı Durdurma
+## Pipeline'ı Durdurma
 
 ```bash
 docker-compose down
