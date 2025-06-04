@@ -32,7 +32,7 @@ chmod +x setup.sh
 ./setup.sh
 ```
 
-## ▶️ Pipeline'ı Çalıştırma
+## Pipeline'ı Çalıştırma
 
 ### Docker servislerini başlatmak için .sh çalıştırılmalı
 
