@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 def create_producer():
     bootstrap_servers = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9094')
     return KafkaProducer(
-        bootstrap_servers=[bootstrap_servers],
+        bootstrap_servers=[bootstrap_servers], #Kafka cluster'a bağlanmak için IP ve port bilgisi
         value_serializer=lambda v: json.dumps(v).encode('utf-8'),
         key_serializer=lambda k: k.encode('utf-8') if k else None
     )
@@ -29,7 +29,7 @@ def main():
     producer = create_producer()
     topic = 'user-data'
     
-    logger.info("Producer başlatıldı. Veri gönderimi başlıyor...")
+    logger.info("Producer başlatıldı.")
     
     while True:
         try:
