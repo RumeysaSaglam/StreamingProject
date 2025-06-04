@@ -24,34 +24,23 @@ RandomUser API → Kafka Producer → Kafka → Spark Streaming → PostgreSQL
 └── jars/                     # JDBC driver'lar (otomatik indirilir)
 ```
 
-## 🚀 Hızlı Başlangıç
 
-### 1. Otomatik Kurulum (Önerilen)
+### 1. İlk çalıştırma için Kurulum 
 
 ```bash
 chmod +x setup.sh
 ./setup.sh
 ```
 
-### 2. Manuel Kurulum
-
-```bash
-# 1. Dizinleri oluştur
-mkdir -p producer spark-app jars
-
-# 2. PostgreSQL JDBC driver'ını indir
-curl -L -o jars/postgresql-42.7.0.jar https://jdbc.postgresql.org/download/postgresql-42.7.0.jar
-
-# 3. Servisleri başlat
-docker-compose up -d
-
-# 4. Kafka topic oluştur
-docker exec kafka kafka-topics --create --topic user-data --bootstrap-server localhost:9094 --partitions 1 --replication-factor 1
-```
-
 ## ▶️ Pipeline'ı Çalıştırma
 
-### Spark Streaming Job'ını Başlat
+### Docker servislerini başlatmak için .sh çalıştırılmalı
+
+```bash
+./docker_restart.sh
+```
+
+### Spark Streaming Job'ını Başlatmak için aşağıdaki komut çalıştırılmalı
 
 ```bash
 docker exec spark-master spark-submit \
@@ -86,14 +75,6 @@ docker logs -f kafka-producer
 docker logs -f spark-master
 ```
 
-## 🛠️ Servis Detayları
-
-| Servis | Port | Kullanıcı/Şifre | Açıklama |
-|--------|------|----------------|----------|
-| Kafka | 9092 | - | Message broker |
-| PostgreSQL | 5432 | postgres/password | Veritabanı |
-| Spark Master | 8080 | - | Spark UI |
-| Zookeeper | 2181 | - | Kafka coordination |
 
 ## 📊 Veri Akışı
 
@@ -113,11 +94,11 @@ docker logs -f spark-master
 
 ## 🔧 Troubleshooting
 
-### Pipeline Çalışmıyor mu?
+### Pipeline Çalışmıyor ise
 
 1. **Servislerin durumunu kontrol et:**
 ```bash
-docker-compose ps
+docker-compose ps -a
 ```
 
 2. **Kafka topic'i var mı kontrol et:**
@@ -130,12 +111,6 @@ docker exec kafka kafka-topics --list --bootstrap-server localhost:9094
 docker exec -it pgdb psql -U postgres -d postgres -c "\dt"
 ```
 
-### Spark Job Başlamıyor mu?
-
-JAR dosyalarının doğru yüklendiğinden emin ol:
-```bash
-ls -la jars/
-```
 
 ## 🛑 Pipeline'ı Durdurma
 
@@ -143,9 +118,3 @@ ls -la jars/
 docker-compose down
 docker-compose down -v  # Volume'ları da sil
 ```
-
-## 📈 Performans Ayarları
-
-Producer frekansını değiştirmek için `producer/producer.py` dosyasındaki `time.sleep(5)` değerini düzenleyin.
-
-Spark worker sayısını artırmak için `docker-compose.yml` dosyasında yeni worker servisleri ekleyin.

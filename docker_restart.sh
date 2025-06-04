@@ -4,8 +4,8 @@
 echo "Stopping all containers..."
 docker compose down
 
-# Kafka volumelerini kaldır
-echo "Removing Kafka volumes..."
+# Volumeleri kaldır
+echo "Removing volumes..."
 
 #Tüm volume'leri sil
 docker volume rm $(docker volume ls -q)

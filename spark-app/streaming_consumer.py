@@ -82,21 +82,21 @@ def parse_user_data(df):
         from_json(col("value").cast("string"), user_schema).alias("data")
     )
     
-    # İlk kullanıcıyı al
+    # Kullanıcıyı al
     user_df = parsed_df.select(
         explode(col("data.results")).alias("user")
     )
     
     # Flattened DataFrame oluştur
     flattened_df = user_df.select(
-        col("user.login.uuid").alias("uuid"),
+        concat(substring("user.login.uuid", 1, 4), lit("****-****")).alias("uuid") #col("user.login.uuid").alias("uuid"),
         col("user.gender").alias("gender"),
         col("user.name.title").alias("title"),
         col("user.name.first").alias("first_name"),
         col("user.name.last").alias("last_name"),
         col("user.email").alias("email"),
-        col("user.phone").alias("phone"),
-        col("user.cell").alias("cell"),
+        expr("concat('***-***-', substring(user.phone, -4))").alias("phone"),  #col("user.phone").alias("phone"),
+        expr("concat('***-***-', substring(user.cell, -4))").alias("cell"),  #col("user.cell").alias("cell"),
         to_date(col("user.dob.date")).alias("date_of_birth"),
         col("user.dob.age").alias("age"),
         col("user.nat").alias("nationality"),
@@ -111,7 +111,7 @@ def parse_user_data(df):
         col("user.location.timezone.offset").alias("timezone_offset"),
         col("user.location.timezone.description").alias("timezone_description"),
         col("user.login.username").alias("username"),
-        col("user.login.password").alias("password"),
+        lit("********").alias("password"), #col("user.login.password").alias("password"),
         col("user.login.salt").alias("salt"),
         col("user.login.md5").alias("md5"),
         col("user.login.sha1").alias("sha1"),
