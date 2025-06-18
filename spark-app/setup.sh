@@ -2,7 +2,7 @@
 
 # Gerekli dizinleri oluştur
 mkdir -p producer
-mkdir -p spark-app
+mkdir -p src
 mkdir -p jars
 
 echo "JAR files installing"

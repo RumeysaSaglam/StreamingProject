@@ -19,7 +19,7 @@ RandomUser API → Kafka Producer → Kafka → Spark Streaming → PostgreSQL
 ├── producer/
 │   ├── requirements.txt       # Python bağımlılıkları
 │   └── producer.py           # Kafka producer scripti
-├── spark-app/
+├── src/
 │   └── streaming_consumer.py  # PySpark streaming uygulaması
 └── jars/                     # JDBC driver'lar
 ```

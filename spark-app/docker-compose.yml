@@ -61,7 +61,7 @@ services:
       - "8080:8080"
       - "7077:7077"
     volumes:
-      - ./spark-app:/app
+      - ./src:/app
       - ./jars:/opt/bitnami/spark/jars/extra
 
   spark-worker:
@@ -79,7 +79,7 @@ services:
     depends_on:
       - spark-master
     volumes:
-      - ./spark-app:/app
+      - ./src:/app
       - ./jars:/opt/bitnami/spark/jars/extra
 
   producer:

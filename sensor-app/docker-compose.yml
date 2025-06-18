@@ -1,0 +1,169 @@
+version: '3.8'
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_SYNC_LIMIT: 2
+    ports:
+      - "2181:2181"
+    healthcheck:
+      test: ["CMD", "echo", "ruok", "|", "nc", "localhost", "2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kafka-net
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,CONNECTIONS_FROM_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONNECTIONS_FROM_HOST:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONNECTIONS_FROM_HOST://0.0.0.0:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_NUM_PARTITIONS: 4
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "kafka:9092", "--list"]
+      interval: 30s
+      timeout: 10s
+      retries: 4
+    networks:
+      - kafka-net
+
+  kafka-topics-setup:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka-topics-setup
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: "no"
+    command: >
+      bash -c "
+        echo 'Creating Kafka topics...'
+        kafka-topics --create --topic sensor-data --bootstrap-server kafka:9092 --partitions 4 --replication-factor 1 --if-not-exists
+        kafka-topics --create --topic sensor-alerts --bootstrap-server kafka:9092 --partitions 2 --replication-factor 1 --if-not-exists
+        echo 'Topics created successfully!'
+        kafka-topics --list --bootstrap-server kafka:9092
+      "
+    networks:
+      - kafka-net
+
+  postgres:
+    image: postgres:13
+    container_name: sensor-postgres
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - kafka-net
+
+  api:
+    build: .
+    container_name: sensor-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src:/app/src
+    working_dir: /app/src
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      PYTHONPATH: /app/src
+      KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+      DB_HOST: "postgres"
+      DB_PORT: "5432"
+      DB_NAME: "postgres"
+      DB_USER: "postgres"
+      DB_PASSWORD: "pass"
+    command: ["python", "-m", "uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - kafka-net
+
+  simulator:
+    build: .
+    container_name: sensor-simulator
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      PYTHONPATH: /app/src
+      API_URL: http://api:8000
+    command: ["python", "sensor_simulator.py"]
+    volumes:
+      - ./src:/app/src
+    working_dir: /app/src
+    networks:
+      - kafka-net
+    restart: on-failure:3
+
+  consumer:
+    build: .
+    container_name: sensor-consumer
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      PYTHONPATH: /app/src
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      API_URL: http://api:8000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: postgres
+      DB_USER: postgres
+      DB_PASSWORD: pass
+    command: ["python", "consumer.py"]
+    volumes:
+      - ./src:/app/src
+    working_dir: /app/src
+    networks:
+      - kafka-net
+    restart: on-failure:3
+    healthcheck:
+      test: ["CMD", "python", "-c", "from confluent_kafka import Consumer; c=Consumer({'bootstrap.servers':'kafka:9092','group.id':'test'}); c.close()"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+volumes:
+  postgres_data:
+
+networks:
+  kafka-net:
+    driver: bridge
